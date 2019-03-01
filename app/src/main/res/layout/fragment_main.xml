@@ -9,9 +9,53 @@
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n12345612354\n" />
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="10"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="11"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="12"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="13"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="14"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="15"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:gravity="center"
+            android:text="16"
+            android:textColor="@color/colorPrimary" />
 
     </LinearLayout>
 
