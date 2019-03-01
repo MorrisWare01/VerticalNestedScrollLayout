@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <com.morrisware.nestedscrolllayout.NestedScrollLayout
+    <com.morrisware.nestedscrolllayout.NestedScrollViewGroup
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -20,14 +20,14 @@
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
+                    android:layout_height="600dp"
                     android:gravity="center"
                     android:text="1"
                     android:textColor="@color/colorPrimary" />
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="200dp"
+                    android:layout_height="600dp"
                     android:gravity="center"
                     android:text="2"
                     android:textColor="@color/colorPrimary" />
@@ -108,5 +108,5 @@
 
         </android.support.v4.widget.NestedScrollView>
 
-    </com.morrisware.nestedscrolllayout.NestedScrollLayout>
+    </com.morrisware.nestedscrolllayout.NestedScrollViewGroup>
 </layout>
