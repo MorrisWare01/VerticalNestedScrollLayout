@@ -41,7 +41,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     private NestedScrollingParentHelper mNestedScrollingParentHelper = new NestedScrollingParentHelper(this);
     private boolean isInHeaderLayout;
     private VelocityTracker mVelocityTracker;
-    private MotionEvent currentEvent;
+
     private int mTouchSlop;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
@@ -118,6 +118,8 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
+
+
         return true;
     }
 
@@ -125,7 +127,6 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     public boolean onTouchEvent(MotionEvent ev) {
         initVelocityTrackerIfNotExists();
 
-        currentEvent = ev;
         final int x = (int) ev.getX();
         final int y = (int) ev.getY();
         final int dy = mLastMotionY - y;
@@ -142,25 +143,12 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                 Log.d("TAG", "isInHeaderLayout:" + isInHeaderLayout);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (isInHeaderLayout) {
-                    if (dy > 0) {
-                        if (headerLayout.canScrollVertically(dy)) {
-                            headerLayout.onTouchEvent(ev);
-                        } else {
-                            int min, max;
-                            min = -getTotalScrollRange();
-                            max = 0;
-                            final int curOffset = getTopAndBottomOffset();
-                            int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                            if (curOffset != newOffset) {
-                                setTopAndBottomOffset(newOffset);
-                            }
-                        }
-                    } else {
-                        if (getTopAndBottomOffset() == 0) {
-                            headerLayout.onTouchEvent(ev);
-                        } else {
-                            if (!scrollLayout.canScrollVertically(dy)) {
+                if (Math.abs(dy) > mTouchSlop) {
+                    if (isInHeaderLayout) {
+                        if (dy > 0) {
+                            if (headerLayout.canScrollVertically(dy)) {
+                                headerLayout.onTouchEvent(ev);
+                            } else {
                                 int min, max;
                                 min = -getTotalScrollRange();
                                 max = 0;
@@ -170,35 +158,50 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                                     setTopAndBottomOffset(newOffset);
                                 }
                             }
+                        } else {
+                            if (getTopAndBottomOffset() == 0) {
+                                headerLayout.onTouchEvent(ev);
+                            } else {
+                                if (!scrollLayout.canScrollVertically(dy)) {
+                                    int min, max;
+                                    min = -getTotalScrollRange();
+                                    max = 0;
+                                    final int curOffset = getTopAndBottomOffset();
+                                    int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                                    if (curOffset != newOffset) {
+                                        setTopAndBottomOffset(newOffset);
+                                    }
+                                }
+                            }
                         }
-                    }
-                } else {
-                    if (dy > 0) {
-                        if (getTopAndBottomOffset() > -getTotalScrollRange()) {
-                            int min, max;
-                            min = -getTotalScrollRange();
-                            max = 0;
-                            final int curOffset = getTopAndBottomOffset();
-                            int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                            if (curOffset != newOffset) {
-                                setTopAndBottomOffset(newOffset);
+                    } else {
+                        if (dy > 0) {
+                            if (getTopAndBottomOffset() > -getTotalScrollRange()) {
+                                int min, max;
+                                min = -getTotalScrollRange();
+                                max = 0;
+                                final int curOffset = getTopAndBottomOffset();
+                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                                if (curOffset != newOffset) {
+                                    setTopAndBottomOffset(newOffset);
+                                }
+                            } else {
+                                if (scrollLayout.canScrollVertically(dy)) {
+                                    scrollLayout.onTouchEvent(ev);
+                                }
                             }
                         } else {
                             if (scrollLayout.canScrollVertically(dy)) {
                                 scrollLayout.onTouchEvent(ev);
-                            }
-                        }
-                    } else {
-                        if (scrollLayout.canScrollVertically(dy)) {
-                            scrollLayout.onTouchEvent(ev);
-                        } else {
-                            int min, max;
-                            min = -getTotalScrollRange();
-                            max = 0;
-                            final int curOffset = getTopAndBottomOffset();
-                            int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                            if (curOffset != newOffset) {
-                                setTopAndBottomOffset(newOffset);
+                            } else {
+                                int min, max;
+                                min = -getTotalScrollRange();
+                                max = 0;
+                                final int curOffset = getTopAndBottomOffset();
+                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                                if (curOffset != newOffset) {
+                                    setTopAndBottomOffset(newOffset);
+                                }
                             }
                         }
                     }
