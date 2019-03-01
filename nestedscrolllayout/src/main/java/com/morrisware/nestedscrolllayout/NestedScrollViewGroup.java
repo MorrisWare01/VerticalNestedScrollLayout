@@ -112,6 +112,11 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     }
 
     @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         return true;
     }
@@ -204,10 +209,10 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                 velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
                 int initialVelocity = (int) velocityTracker.getYVelocity();
                 Log.d("TAG", "initialVelocity:" + initialVelocity);
-                if (isInHeaderLayout) {
-                    boolean consumed = false;
-                    if (getTopAndBottomOffset() != 0) {
-                        if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
+                if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
+                    if (isInHeaderLayout) {
+                        boolean consumed = false;
+                        if (getTopAndBottomOffset() != 0) {
                             if (initialVelocity < 0) { // dy < 0
                                 fling(initialVelocity);
                                 consumed = true;
@@ -218,27 +223,29 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                                 }
                             }
                         }
-                    }
-                    if (!consumed) {
-                        headerLayout.onTouchEvent(ev);
-                    }
-                } else {
-                    boolean consumed = false;
-                    if (getTopAndBottomOffset() != 0) {
-                        if (initialVelocity < 0) { // dy < 0
-                            fling(initialVelocity);
-                            consumed = true;
-                        } else if (initialVelocity > 0) { // dy > 0
-                            if (!scrollLayout.canScrollVertically(-initialVelocity)) {
+                        if (!consumed) {
+                            headerLayout.onTouchEvent(ev);
+                        }
+                    } else {
+                        boolean consumed = false;
+                        if (getTopAndBottomOffset() != 0) {
+                            if (initialVelocity < 0) { // dy < 0
                                 fling(initialVelocity);
                                 consumed = true;
+                            } else if (initialVelocity > 0) { // dy > 0
+                                if (!scrollLayout.canScrollVertically(-initialVelocity)) {
+                                    fling(initialVelocity);
+                                    consumed = true;
+                                }
                             }
                         }
-                    }
 
-                    if (!consumed) {
-                        scrollLayout.onTouchEvent(ev);
+                        if (!consumed) {
+                            scrollLayout.onTouchEvent(ev);
+                        }
                     }
+                } else {
+                    super.onTouchEvent(ev);
                 }
                 recycleVelocityTracker();
                 break;
