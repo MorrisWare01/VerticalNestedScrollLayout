@@ -31,22 +31,21 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     private View scrollLayout;
 
     private ViewOffsetHelper mViewOffsetHelper;
-
     private int mTempTopBottomOffset = 0;
     private int mTempLeftRightOffset = 0;
 
-    private static final Pools.Pool<Rect> sRectPool = new Pools.SynchronizedPool<>(12);
-    private int mLastMotionY;
-
     private NestedScrollingParentHelper mNestedScrollingParentHelper = new NestedScrollingParentHelper(this);
-    private boolean isInHeaderLayout;
-    private VelocityTracker mVelocityTracker;
 
+    private OverScroller mScroller;
+    private VelocityTracker mVelocityTracker;
     private int mTouchSlop;
     private int mMinimumVelocity;
     private int mMaximumVelocity;
 
-    private OverScroller mScroller;
+    private static final Pools.Pool<Rect> sRectPool = new Pools.SynchronizedPool<>(12);
+
+    private boolean isInHeaderLayout;
+    private int mLastMotionY;
     private int mLastScrollerY;
 
     @NonNull
