@@ -117,8 +117,29 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
+        final int x = (int) ev.getX();
+        final int y = (int) ev.getY();
+        final int dy = mLastMotionY - y;
+        final int action = ev.getActionMasked();
 
-
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                isInHeaderLayout = isPointInChildBounds(headerLayout, x, y);
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (Math.abs(dy) > mTouchSlop) {
+                    if (isInHeaderLayout) {
+                        if (getTopAndBottomOffset() != 0) {
+                            return true;
+                        }
+                    } else {
+                        if (!scrollLayout.canScrollVertically(dy)) {
+                            return true;
+                        }
+                    }
+                }
+                break;
+        }
         return true;
     }
 
@@ -129,8 +150,8 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
         final int x = (int) ev.getX();
         final int y = (int) ev.getY();
         final int dy = mLastMotionY - y;
-
         final int action = ev.getActionMasked();
+
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 if (!mScroller.isFinished()) {
