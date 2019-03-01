@@ -203,7 +203,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                 final VelocityTracker velocityTracker = mVelocityTracker;
                 velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
                 int initialVelocity = (int) velocityTracker.getYVelocity();
-                Log.d("TAG", "fling:" + initialVelocity);
+                Log.d("TAG", "initialVelocity:" + initialVelocity);
                 if (isInHeaderLayout) {
                     boolean consumed = false;
                     if (getTopAndBottomOffset() != 0) {
@@ -224,10 +224,15 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                     }
                 } else {
                     boolean consumed = false;
-                    if (!scrollLayout.canScrollVertically(-initialVelocity)) {
-                        if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
+                    if (getTopAndBottomOffset() != 0) {
+                        if (initialVelocity < 0) { // dy < 0
                             fling(initialVelocity);
                             consumed = true;
+                        } else if (initialVelocity > 0) { // dy > 0
+                            if (!scrollLayout.canScrollVertically(-initialVelocity)) {
+                                fling(initialVelocity);
+                                consumed = true;
+                            }
                         }
                     }
 
@@ -349,9 +354,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
         if (type == ViewCompat.TYPE_NON_TOUCH) {
             if (isInHeaderLayout) {
                 if (dy > 0) {
-                    if (headerLayout.canScrollVertically(dy)) {
-                        return;
-                    } else {
+                    if (!headerLayout.canScrollVertically(dy)) {
                         int min, max;
                         min = -getTotalScrollRange();
                         max = 0;
@@ -364,16 +367,33 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
                         final int dyUnconsumed = dy - consumed[1];
                         if (dyUnconsumed != 0) {
-                            final int y = mLastMotionY - dyUnconsumed;
                             final long now = System.currentTimeMillis();
-                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, currentEvent.getX(), y, 0));
-                            mLastMotionY = y;
+                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
+                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
                             consumed[1] = dy;
                         }
                     }
-                } else {
-                    if (scrollLayout.canScrollVertically(dy)) {
-                        return;
+                }
+            } else {
+                if (dy < 0) {
+                    if (!scrollLayout.canScrollVertically(dy)) {
+                        int min, max;
+                        min = -getTotalScrollRange();
+                        max = 0;
+                        final int curOffset = getTopAndBottomOffset();
+                        int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                        if (curOffset != newOffset) {
+                            setTopAndBottomOffset(newOffset);
+                            consumed[1] = curOffset - newOffset;
+                        }
+
+                        final int dyUnconsumed = dy - consumed[1];
+                        if (dyUnconsumed != 0) {
+                            final long now = System.currentTimeMillis();
+                            headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
+                            headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
+                            consumed[1] = dy;
+                        }
                     }
                 }
             }
