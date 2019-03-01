@@ -131,7 +131,6 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                     mScroller.abortAnimation();
                 }
 
-                mLastMotionY = y;
                 if (isPointInChildBounds(headerLayout, x, y)) {
                     isInHeaderLayout = true;
                 } else {
@@ -176,7 +175,6 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                         scrollLayout.onTouchEvent(ev);
                     }
                 }
-                mLastMotionY = y;
                 break;
             case MotionEvent.ACTION_UP:
                 final VelocityTracker velocityTracker = mVelocityTracker;
@@ -200,6 +198,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                 break;
         }
 
+        mLastMotionY = y;
         if (mVelocityTracker != null) {
             mVelocityTracker.addMovement(ev);
         }
@@ -237,7 +236,12 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
             if (dy != 0) {
                 final long now = System.currentTimeMillis();
-                headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, mLastMotionY + (y - mScroller.getStartX()), 0));
+                final long motionY = mLastMotionY + (y - mScroller.getStartX());
+                if (headerLayout.canScrollVertically(dy)) {
+                    headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, motionY, 0));
+                } else {
+                    scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, motionY, 0));
+                }
             }
 
             mLastScrollerY = y;
@@ -313,6 +317,15 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                         if (curOffset != newOffset) {
                             setTopAndBottomOffset(newOffset);
                             consumed[1] = curOffset - newOffset;
+                        }
+
+                        final int dyUnconsumed = dy - consumed[1];
+                        if (dyUnconsumed != 0) {
+                            final int y = mLastMotionY - dyUnconsumed;
+                            final long now = System.currentTimeMillis();
+                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, y, 0));
+                            mLastMotionY = y;
+                            consumed[1] = dy;
                         }
                     }
                 } else {
