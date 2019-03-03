@@ -129,18 +129,35 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
             case MotionEvent.ACTION_MOVE:
                 if (Math.abs(dy) > mTouchSlop) {
                     if (isInHeaderLayout) {
-                        if (getTopAndBottomOffset() != 0) {
-                            return true;
+                        if (dy > 0) {
+                            if (!(headerLayout.canScrollVertically(dy))) {
+                                return true;
+                            }
+                        } else {
+                            if (getTopAndBottomOffset() != 0 && !scrollLayout.canScrollVertically(dy)) {
+                                return true;
+                            }
+
                         }
                     } else {
-                        if (!scrollLayout.canScrollVertically(dy)) {
-                            return true;
+                        if (dy > 0) {
+                            if (getTopAndBottomOffset() > -getTotalScrollRange()) {
+                                return true;
+                            }
+                        } else {
+                            if (!scrollLayout.canScrollVertically(dy)) {
+                                return true;
+                            }
                         }
                     }
                 }
                 break;
+            case MotionEvent.ACTION_UP:
+
+
+                break;
         }
-        return true;
+        return super.onInterceptTouchEvent(ev);
     }
 
     @Override
