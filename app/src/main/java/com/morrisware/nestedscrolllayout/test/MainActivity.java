@@ -24,25 +24,12 @@ public class MainActivity extends AppCompatActivity {
         mBinding.viewPager.setAdapter(new MyPagerAdapter(getSupportFragmentManager()));
         mBinding.tabLayout.setupWithViewPager(mBinding.viewPager);
 
-        mBinding.root.setOnClickListener(new View.OnClickListener() {
+        mBinding.llHeader.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "root click", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Header click", Toast.LENGTH_SHORT).show();
             }
         });
-        mBinding.viewPager.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "viewpager click", Toast.LENGTH_SHORT).show();
-            }
-        });
-        mBinding.scrollView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "scrollView click", Toast.LENGTH_SHORT).show();
-            }
-        });
-
     }
 
     private class MyPagerAdapter extends FragmentStatePagerAdapter {
@@ -58,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
-            if (position == 0) {
+            if (position == 1) {
                 return new MainFragment();
             } else {
                 return new ErrorFragment();

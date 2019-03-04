@@ -1,7 +1,9 @@
 package com.morrisware.nestedscrolllayout;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -45,8 +47,11 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     private static final Pools.Pool<Rect> sRectPool = new Pools.SynchronizedPool<>(12);
 
     private boolean isInHeaderLayout;
+    private int mLastMotionX;
     private int mLastMotionY;
     private int mLastScrollerY;
+    private int saveDyUnconsumed;
+    private boolean isRunning;
 
     @NonNull
     private static Rect acquireTempRect() {
@@ -111,175 +116,228 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        return super.dispatchTouchEvent(ev);
-    }
-
-    @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        final int x = (int) ev.getX();
-        final int y = (int) ev.getY();
-        final int dy = mLastMotionY - y;
-        final int action = ev.getActionMasked();
-
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                isInHeaderLayout = isPointInChildBounds(headerLayout, x, y);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (Math.abs(dy) > mTouchSlop) {
-                    if (isInHeaderLayout) {
-                        if (getTopAndBottomOffset() != 0) {
-                            return true;
-                        }
-                    } else {
-                        if (!scrollLayout.canScrollVertically(dy)) {
-                            return true;
-                        }
-                    }
-                }
-                break;
+        if (isRunning) {
+            return true;
         }
-        return true;
+        return super.onInterceptTouchEvent(ev);
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent ev) {
-        initVelocityTrackerIfNotExists();
+    //    @Override
+//    public boolean onInterceptTouchEvent(MotionEvent ev) {
+//        final int x = (int) ev.getX();
+//        final int y = (int) ev.getY();
+//        final int dy = mLastMotionY - y;
+//        final int action = ev.getActionMasked();
+//
+//        switch (action) {
+//            case MotionEvent.ACTION_DOWN:
+//                Log.d("TAG", "onInterceptTouchEvent:Down");
+//                isInHeaderLayout = isPointInChildBounds(headerLayout, x, y);
+//                mScroller.computeScrollOffset();
+//                if (!mScroller.isFinished()) {
+//                    mScroller.abortAnimation();
+//                }
+//                Log.d("TAG", "isInHeaderLayout:" + isInHeaderLayout);
+//                break;
+//            case MotionEvent.ACTION_MOVE:
+//                Log.d("TAG", "onInterceptTouchEvent:move");
+//                final int deltaX = mLastMotionX - x;
+//                final int deltaY = mLastMotionY - y;
+//                if (Math.abs(deltaY) > Math.abs(deltaX)) {
+//                    if (Math.abs(dy) > mTouchSlop) {
+//                        if (isInHeaderLayout) {
+//                            if (dy > 0) {
+//                                if (headerLayout.canScrollVertically(dy)) {
+//
+//                                } else {
+//
+//                                    return true;
+//                                }
+//                            } else {
+//                                if (getTopAndBottomOffset() == 0) {
+//                                } else {
+//                                    if (!scrollLayout.canScrollVertically(dy)) {
+//                                        return true;
+//                                    }
+//                                }
+//                            }
+//                        } else {
+//                            if (dy > 0) {
+//                                if (getTopAndBottomOffset() > -getTotalScrollRange()) {
+//                                    return true;
+//                                } else {
+//                                    if (scrollLayout.canScrollVertically(dy)) {
+//
+//                                    }
+//                                }
+//                            } else {
+//                                if (scrollLayout.canScrollVertically(dy)) {
+//
+//                                } else {
+//                                    return true;
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case MotionEvent.ACTION_UP:
+//                Log.d("TAG", "onInterceptTouchEvent:up");
+//                break;
+//        }
+//
+//        mLastMotionX = x;
+//        mLastMotionY = y;
+//        return super.onInterceptTouchEvent(ev);
+//    }
 
-        final int x = (int) ev.getX();
-        final int y = (int) ev.getY();
-        final int dy = mLastMotionY - y;
-        final int action = ev.getActionMasked();
-
-        switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                if (!mScroller.isFinished()) {
-                    mScroller.abortAnimation();
-                }
-                headerLayout.onTouchEvent(ev);
-                scrollLayout.onTouchEvent(ev);
-                isInHeaderLayout = isPointInChildBounds(headerLayout, x, y);
-                Log.d("TAG", "isInHeaderLayout:" + isInHeaderLayout);
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (Math.abs(dy) > mTouchSlop) {
-                    if (isInHeaderLayout) {
-                        if (dy > 0) {
-                            if (headerLayout.canScrollVertically(dy)) {
-                                headerLayout.onTouchEvent(ev);
-                            } else {
-                                int min, max;
-                                min = -getTotalScrollRange();
-                                max = 0;
-                                final int curOffset = getTopAndBottomOffset();
-                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                                if (curOffset != newOffset) {
-                                    setTopAndBottomOffset(newOffset);
-                                }
-                            }
-                        } else {
-                            if (getTopAndBottomOffset() == 0) {
-                                headerLayout.onTouchEvent(ev);
-                            } else {
-                                if (!scrollLayout.canScrollVertically(dy)) {
-                                    int min, max;
-                                    min = -getTotalScrollRange();
-                                    max = 0;
-                                    final int curOffset = getTopAndBottomOffset();
-                                    int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                                    if (curOffset != newOffset) {
-                                        setTopAndBottomOffset(newOffset);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (dy > 0) {
-                            if (getTopAndBottomOffset() > -getTotalScrollRange()) {
-                                int min, max;
-                                min = -getTotalScrollRange();
-                                max = 0;
-                                final int curOffset = getTopAndBottomOffset();
-                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                                if (curOffset != newOffset) {
-                                    setTopAndBottomOffset(newOffset);
-                                }
-                            } else {
-                                if (scrollLayout.canScrollVertically(dy)) {
-                                    scrollLayout.onTouchEvent(ev);
-                                }
-                            }
-                        } else {
-                            if (scrollLayout.canScrollVertically(dy)) {
-                                scrollLayout.onTouchEvent(ev);
-                            } else {
-                                int min, max;
-                                min = -getTotalScrollRange();
-                                max = 0;
-                                final int curOffset = getTopAndBottomOffset();
-                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                                if (curOffset != newOffset) {
-                                    setTopAndBottomOffset(newOffset);
-                                }
-                            }
-                        }
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                final VelocityTracker velocityTracker = mVelocityTracker;
-                velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
-                int initialVelocity = (int) velocityTracker.getYVelocity();
-                Log.d("TAG", "initialVelocity:" + initialVelocity);
-                if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
-                    if (isInHeaderLayout) {
-                        boolean consumed = false;
-                        if (getTopAndBottomOffset() != 0) {
-                            if (initialVelocity < 0) { // dy < 0
-                                fling(initialVelocity);
-                                consumed = true;
-                            } else if (initialVelocity > 0) { // dy > 0
-                                if (!scrollLayout.canScrollVertically(-initialVelocity)) {
-                                    fling(initialVelocity);
-                                    consumed = true;
-                                }
-                            }
-                        }
-                        if (!consumed) {
-                            headerLayout.onTouchEvent(ev);
-                        }
-                    } else {
-                        boolean consumed = false;
-                        if (getTopAndBottomOffset() != 0) {
-                            if (initialVelocity < 0) { // dy < 0
-                                fling(initialVelocity);
-                                consumed = true;
-                            } else if (initialVelocity > 0) { // dy > 0
-                                if (!scrollLayout.canScrollVertically(-initialVelocity)) {
-                                    fling(initialVelocity);
-                                    consumed = true;
-                                }
-                            }
-                        }
-
-                        if (!consumed) {
-                            scrollLayout.onTouchEvent(ev);
-                        }
-                    }
-                } else {
-                    super.onTouchEvent(ev);
-                }
-                recycleVelocityTracker();
-                break;
-        }
-
-        mLastMotionY = y;
-        if (mVelocityTracker != null) {
-            mVelocityTracker.addMovement(ev);
-        }
-        return true;
-    }
+//    @Override
+//    public boolean onTouchEvent(MotionEvent ev) {
+//        initVelocityTrackerIfNotExists();
+//
+//        final int x = (int) ev.getX();
+//        final int y = (int) ev.getY();
+//        final int dy = mLastMotionY - y;
+//        final int action = ev.getActionMasked();
+//
+//        switch (action) {
+//            case MotionEvent.ACTION_DOWN:
+//                mScroller.computeScrollOffset();
+//                if (!mScroller.isFinished()) {
+//                    mScroller.abortAnimation();
+//                }
+//                isInHeaderLayout = isPointInChildBounds(headerLayout, x, y);
+//                if (isInHeaderLayout) {
+//                    headerLayout.onTouchEvent(ev);
+//                } else {
+//                    scrollLayout.onTouchEvent(ev);
+//                }
+//                Log.d("TAG", "isInHeaderLayout:" + isInHeaderLayout);
+//                break;
+//            case MotionEvent.ACTION_MOVE:
+//                if (Math.abs(dy) > mTouchSlop) {
+//                    if (isInHeaderLayout) {
+//                        if (dy > 0) {
+//                            if (headerLayout.canScrollVertically(dy)) {
+//                                headerLayout.onTouchEvent(ev);
+//                            } else {
+//                                int min, max;
+//                                min = -getTotalScrollRange();
+//                                max = 0;
+//                                final int curOffset = getTopAndBottomOffset();
+//                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//                                if (curOffset != newOffset) {
+//                                    setTopAndBottomOffset(newOffset);
+//                                }
+//                            }
+//                        } else {
+//                            if (getTopAndBottomOffset() == 0) {
+//                                headerLayout.onTouchEvent(ev);
+//                            } else {
+//                                if (!scrollLayout.canScrollVertically(dy)) {
+//                                    int min, max;
+//                                    min = -getTotalScrollRange();
+//                                    max = 0;
+//                                    final int curOffset = getTopAndBottomOffset();
+//                                    int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//                                    if (curOffset != newOffset) {
+//                                        setTopAndBottomOffset(newOffset);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        if (dy > 0) {
+//                            if (getTopAndBottomOffset() > -getTotalScrollRange()) {
+//                                int min, max;
+//                                min = -getTotalScrollRange();
+//                                max = 0;
+//                                final int curOffset = getTopAndBottomOffset();
+//                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//                                if (curOffset != newOffset) {
+//                                    setTopAndBottomOffset(newOffset);
+//                                }
+//                            } else {
+//                                if (scrollLayout.canScrollVertically(dy)) {
+//                                    scrollLayout.onTouchEvent(ev);
+//                                }
+//                            }
+//                        } else {
+//                            if (scrollLayout.canScrollVertically(dy)) {
+//                                scrollLayout.onTouchEvent(ev);
+//                            } else {
+//                                int min, max;
+//                                min = -getTotalScrollRange();
+//                                max = 0;
+//                                final int curOffset = getTopAndBottomOffset();
+//                                int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//                                if (curOffset != newOffset) {
+//                                    setTopAndBottomOffset(newOffset);
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//                break;
+//            case MotionEvent.ACTION_UP:
+////                final VelocityTracker velocityTracker = mVelocityTracker;
+////                velocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
+////                int initialVelocity = (int) velocityTracker.getYVelocity();
+////                Log.d("TAG", "initialVelocity:" + initialVelocity);
+////                if ((Math.abs(initialVelocity) > mMinimumVelocity)) {
+////                    if (isInHeaderLayout) {
+////                        boolean consumed = false;
+////                        if (getTopAndBottomOffset() != 0) {
+////                            if (initialVelocity < 0) { // dy < 0
+////                                fling(initialVelocity);
+////                                consumed = true;
+////                            } else if (initialVelocity > 0) { // dy > 0
+////                                if (!scrollLayout.canScrollVertically(-initialVelocity)) {
+////                                    fling(initialVelocity);
+////                                    consumed = true;
+////                                }
+////                            }
+////                        }
+////                        if (!consumed) {
+////                            headerLayout.onTouchEvent(ev);
+////                        }
+////                    } else {
+////                        boolean consumed = false;
+////                        if (getTopAndBottomOffset() != 0) {
+////                            if (initialVelocity < 0) { // dy < 0
+////                                fling(initialVelocity);
+////                                consumed = true;
+////                            } else if (initialVelocity > 0) { // dy > 0
+////                                if (!scrollLayout.canScrollVertically(-initialVelocity)) {
+////                                    fling(initialVelocity);
+////                                    consumed = true;
+////                                }
+////                            }
+////                        }
+////
+////                        if (!consumed) {
+////                            scrollLayout.onTouchEvent(ev);
+////                        }
+////                    }
+////                } else {
+////                    super.onTouchEvent(ev);
+////                    if (isInHeaderLayout) {
+////                        headerLayout.onTouchEvent(ev);
+////                    } else {
+////                        scrollLayout.onTouchEvent(ev);
+////                    }
+////                }
+////                recycleVelocityTracker();
+//                break;
+//        }
+//
+//        mLastMotionY = y;
+//        if (mVelocityTracker != null) {
+//            mVelocityTracker.addMovement(ev);
+//        }
+//        return true;
+//    }
 
     public void fling(int velocityY) {
         if (getChildCount() > 0) {
@@ -297,34 +355,34 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     public void computeScroll() {
         super.computeScroll();
         if (mScroller.computeScrollOffset()) {
-            final int y = mScroller.getCurrY();
-            int dy = mLastScrollerY - y;
-
-            int min, max;
-            min = -getTotalScrollRange();
-            max = 0;
-            final int curOffset = getTopAndBottomOffset();
-            int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-            if (curOffset != newOffset) {
-                setTopAndBottomOffset(newOffset);
-                dy -= curOffset - newOffset;
-            }
-
-            if (dy != 0) {
-                final long now = System.currentTimeMillis();
-                if (headerLayout.canScrollVertically(dy)) {
-                    headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
-                    headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dy, 0));
-                } else {
-                    if (scrollLayout.canScrollVertically(dy)) {
-                        scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
-                        scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dy, 0));
-                    }
-                }
-            }
-
-            mLastScrollerY = y;
-            ViewCompat.postInvalidateOnAnimation(this);
+//            final int y = mScroller.getCurrY();
+//            int dy = mLastScrollerY - y;
+//
+//            int min, max;
+//            min = -getTotalScrollRange();
+//            max = 0;
+//            final int curOffset = getTopAndBottomOffset();
+//            int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//            if (curOffset != newOffset) {
+//                setTopAndBottomOffset(newOffset);
+//                dy -= curOffset - newOffset;
+//            }
+//
+//            if (dy != 0) {
+//                final long SystemClock.uptimeMillis() = System.currentTimeMillis();
+//                if (headerLayout.canScrollVertically(dy)) {
+//                    headerLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+//                    headerLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 0, -dy, 0));
+//                } else {
+//                    if (scrollLayout.canScrollVertically(dy)) {
+//                        scrollLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+//                        scrollLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 0, -dy, 0));
+//                    }
+//                }
+//            }
+//
+//            mLastScrollerY = y;
+//            ViewCompat.postInvalidateOnAnimation(this);
         } else {
             mLastScrollerY = 0;
         }
@@ -375,6 +433,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
     @Override
     public void onStopNestedScroll(@NonNull View target, int type) {
+        isRunning = false;
         mNestedScrollingParentHelper.onStopNestedScroll(target, type);
     }
 
@@ -382,7 +441,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         Log.d("TAG", "onNestedPreScroll:dy" + dy + "====type:" + type);
         if (type == ViewCompat.TYPE_NON_TOUCH) {
-            if (isInHeaderLayout) {
+            if (target == headerLayout) {
                 if (dy > 0) {
                     if (!headerLayout.canScrollVertically(dy)) {
                         int min, max;
@@ -397,42 +456,89 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
 
                         final int dyUnconsumed = dy - consumed[1];
                         if (dyUnconsumed != 0) {
-                            final long now = System.currentTimeMillis();
-                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
-                            scrollLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
+                            if (Math.abs(dyUnconsumed) > mTouchSlop) {
+                                isRunning = true;
+                                scrollLayout.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+                                scrollLayout.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
+                                scrollLayout.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, 0, -dyUnconsumed, 0));
+                            } else {
+                                scrollLayout.dispatchTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+                            }
                             consumed[1] = dy;
                         }
                     }
+                } else {
+                    int min, max;
+                    min = -getTotalScrollRange();
+                    max = 0;
+                    final int curOffset = getTopAndBottomOffset();
+                    int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                    if (curOffset != newOffset) {
+                        setTopAndBottomOffset(newOffset);
+                        consumed[1] = curOffset - newOffset;
+                    }
                 }
-            } else {
-                if (dy < 0) {
-                    if (!scrollLayout.canScrollVertically(dy)) {
-                        int min, max;
-                        min = -getTotalScrollRange();
-                        max = 0;
-                        final int curOffset = getTopAndBottomOffset();
-                        int newOffset = MathUtils.clamp(curOffset - dy, min, max);
-                        if (curOffset != newOffset) {
-                            setTopAndBottomOffset(newOffset);
-                            consumed[1] = curOffset - newOffset;
-                        }
+            } else if (target == scrollLayout) {
+//                if (dy < 0) {
+//                    if (!scrollLayout.canScrollVertically(dy)) {
+//                        int min, max;
+//                        min = -getTotalScrollRange();
+//                        max = 0;
+//                        final int curOffset = getTopAndBottomOffset();
+//                        int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+//                        if (curOffset != newOffset) {
+//                            setTopAndBottomOffset(newOffset);
+//                            consumed[1] = curOffset - newOffset;
+//                        }
+//
+//                        final int dyUnconsumed = dy - consumed[1];
+//                        if (dyUnconsumed != 0) {
+//                            final long SystemClock.uptimeMillis() = System.currentTimeMillis();
+//                            headerLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, 0, 0, 0));
+//                            headerLayout.onTouchEvent(MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
+//                            consumed[1] = dy;
+//                        }
+//                    }
+//                }
+            }
+        } else {
+            if (target == headerLayout) {
+                if (dy > 0) {
 
-                        final int dyUnconsumed = dy - consumed[1];
-                        if (dyUnconsumed != 0) {
-                            final long now = System.currentTimeMillis();
-                            headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, 0, 0, 0));
-                            headerLayout.onTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, 0, -dyUnconsumed, 0));
-                            consumed[1] = dy;
-                        }
+                } else {
+                    int min, max;
+                    min = -getTotalScrollRange();
+                    max = 0;
+                    final int curOffset = getTopAndBottomOffset();
+                    int newOffset = MathUtils.clamp(curOffset - dy, min, max);
+                    if (curOffset != newOffset) {
+                        setTopAndBottomOffset(newOffset);
+                        consumed[1] = curOffset - newOffset;
                     }
                 }
+            } else if (target == scrollLayout) {
+
             }
         }
+        Log.d("TAG", "onNestedPreScroll:consumedY:" + consumed[1] + "====target" + target.getId());
     }
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
         Log.d("TAG", "onNestedScroll:dyConsumed" + dyConsumed + "====dyUnconsumed" + dyUnconsumed + "====type:" + type);
+        if (type == ViewCompat.TYPE_TOUCH) {
+            if (target == headerLayout) {
+                int min, max;
+                min = -getTotalScrollRange();
+                max = 0;
+                final int curOffset = getTopAndBottomOffset();
+                int newOffset = MathUtils.clamp(curOffset - dyUnconsumed, min, max);
+                if (curOffset != newOffset) {
+                    setTopAndBottomOffset(newOffset);
+//                    consumed[1] = curOffset - newOffset;
+                }
+            }
+        }
     }
 
     public boolean setTopAndBottomOffset(int offset) {
