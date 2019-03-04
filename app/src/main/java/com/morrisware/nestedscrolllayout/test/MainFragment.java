@@ -24,6 +24,13 @@ public class MainFragment extends Fragment {
                 Toast.makeText(getContext(), "layout click", Toast.LENGTH_SHORT).show();
             }
         });
+        view.findViewById(R.id.layout).setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                Toast.makeText(getContext(), "layout onLongClick", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
         return view;
     }
 
