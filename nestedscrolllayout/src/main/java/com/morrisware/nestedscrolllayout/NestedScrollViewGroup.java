@@ -314,6 +314,7 @@ public class NestedScrollViewGroup extends FrameLayout implements NestedScrollin
                 break;
         }
 
+        mLastMotionX = x;
         mLastMotionY = y;
         if (mVelocityTracker != null) {
             mVelocityTracker.addMovement(ev);
